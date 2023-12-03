@@ -1,4 +1,5 @@
 import heapq
+import json
 import os
 
 class Node:
@@ -42,6 +43,7 @@ def generate_code_table(node, prefix="", code_table={}):
             generate_code_table(node.left, prefix + "0", code_table)
             generate_code_table(node.right, prefix + "1", code_table)
     return code_table
+
 def encode_text(text, code_table):
     encoded_text = ""
     for char in text:
@@ -55,23 +57,26 @@ def encode_huffman_tree(node):
         return f'0{node.char}'
     return encode_huffman_tree(node.left) + encode_huffman_tree(node.right)
 
+def write_header(output_file, frequencies):
+    json_freq = json.dumps(frequencies)
+    output_file.write(json_freq + "\n")
+    output_file.write("---HEADER-END---\n")
+
 def main():
     filepath = "les_miserables.txt"
     frequencies = calculate_frequencies(filepath)
     huffman_tree = build_huffman_tree(frequencies)
     code_table = generate_code_table(huffman_tree)
+    encoded_tree = encode_huffman_tree(huffman_tree)
 
-    # The rest of the encoding process will be implemented here
     with open(filepath, 'r', encoding='utf-8') as file:
         text = file.read()
         encoded_text = encode_text(text, code_table)
 
-    encoded_tree = encode_huffman_tree(huffman_tree)
-
-    # Output the encoded tree and text
-    with open('encoded_output.txt', 'w', encoding='utf-8') as file:
-        file.write(encoded_tree + '\n')
-        file.write(encoded_text)
+    with open('encoded_output.txt', 'w', encoding='utf-8') as output_file:
+        write_header(output_file, frequencies)
+        output_file.write(encoded_tree + "\n")  # Write the encoded tree structure
+        output_file.write(encoded_text)
 
 if __name__ == "__main__":
     main()
