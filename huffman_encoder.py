@@ -1,6 +1,6 @@
 import heapq
 import json
-import os
+import sys
 
 class Node:
     def __init__(self, char, freq):
@@ -45,25 +45,36 @@ def generate_code_table(node, prefix="", code_table={}):
     return code_table
 
 def encode_text(text, code_table):
-    encoded_text = ""
+    encoded_bits = ""
     for char in text:
-        encoded_text += code_table[char]
-    return encoded_text
+        encoded_bits += code_table[char]
+    padding = 8 - len(encoded_bits) % 8
+    encoded_bits += '0' * padding
+    encoded_bytes = bytearray()
+    for i in range(0, len(encoded_bits), 8):
+        byte = encoded_bits[i:i+8]
+        encoded_bytes.append(int(byte, 2))
+    return encoded_bytes, padding
 
 def encode_huffman_tree(node):
     if node is None:
         return "1"
     if node.char is not None:
-        return f'0{node.char}'
+        return '0' + node.char
     return encode_huffman_tree(node.left) + encode_huffman_tree(node.right)
 
-def write_header(output_file, frequencies):
-    json_freq = json.dumps(frequencies)
-    output_file.write(json_freq + "\n")
-    output_file.write("---HEADER-END---\n")
+def write_header(output_file, frequencies, encoded_tree, padding):
+    header_content = {
+        'frequencies': frequencies,
+        'encoded_tree': encoded_tree,
+        'padding': padding
+    }
+    json_header = json.dumps(header_content)
+    output_file.write(json_header + "\n")
 
 def main():
     filepath = "les_miserables.txt"
+    output_filename = "encoded_output.txt"
     frequencies = calculate_frequencies(filepath)
     huffman_tree = build_huffman_tree(frequencies)
     code_table = generate_code_table(huffman_tree)
@@ -71,12 +82,11 @@ def main():
 
     with open(filepath, 'r', encoding='utf-8') as file:
         text = file.read()
-        encoded_text = encode_text(text, code_table)
+        encoded_bytes, padding = encode_text(text, code_table)
 
-    with open('encoded_output.txt', 'w', encoding='utf-8') as output_file:
-        write_header(output_file, frequencies)
-        output_file.write(encoded_tree + "\n")  # Write the encoded tree structure
-        output_file.write(encoded_text)
+    with open(output_filename, 'w', encoding='utf-8') as output_file:
+        write_header(output_file, frequencies, encoded_tree, padding)
+        output_file.write(encoded_bytes.decode('latin1'))  # Write bytes as text
 
 if __name__ == "__main__":
     main()
