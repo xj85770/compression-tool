@@ -49,25 +49,22 @@ def encode_text(text, code_table):
     return encoded_text
 
 def encode_huffman_tree(node):
-    tree_str = ""
     if node is None:
         return "1"
     if node.char is not None:
-        return "0" + node.char
-    tree_str += encode_huffman_tree(node.left)
-    tree_str += encode_huffman_tree(node.right)
-    return tree_str
+        return f'0{node.char}'
+    return encode_huffman_tree(node.left) + encode_huffman_tree(node.right)
 
 def main():
     filepath = "les_miserables.txt"
     frequencies = calculate_frequencies(filepath)
     huffman_tree = build_huffman_tree(frequencies)
     code_table = generate_code_table(huffman_tree)
-    
+
     with open(filepath, 'r', encoding='utf-8') as file:
         text = file.read()
         encoded_text = encode_text(text, code_table)
-    
+
     encoded_tree = encode_huffman_tree(huffman_tree)
 
     # Output the encoded tree and text
