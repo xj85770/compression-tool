@@ -38,10 +38,10 @@ def generate_code_table(node, prefix="", code_table={}):
     if node is not None:
         if node.char is not None:
             code_table[node.char] = prefix
-        generate_code_table(node.left, prefix + "0", code_table)
-        generate_code_table(node.right, prefix + "1", code_table)
+        else:
+            generate_code_table(node.left, prefix + "0", code_table)
+            generate_code_table(node.right, prefix + "1", code_table)
     return code_table
-
 def encode_text(text, code_table):
     encoded_text = ""
     for char in text:
@@ -61,6 +61,7 @@ def main():
     huffman_tree = build_huffman_tree(frequencies)
     code_table = generate_code_table(huffman_tree)
 
+    # The rest of the encoding process will be implemented here
     with open(filepath, 'r', encoding='utf-8') as file:
         text = file.read()
         encoded_text = encode_text(text, code_table)
