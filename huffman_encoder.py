@@ -72,8 +72,45 @@ def write_header(output_file, frequencies, encoded_tree, padding):
     json_header = json.dumps(header_content)
     output_file.write(json_header + "\n")
 
-def main():
-    filepath = "les_miserables.txt"
+def read_header(input_file):
+    json_header = input_file.readline()
+    header_content = json.loads(json_header)
+    return header_content
+def decode_huffman_tree(encoded_tree):
+    stack = []
+    i = 0
+    while i < len(encoded_tree):
+        if encoded_tree[i] == '1':
+            stack.append(Node(None, 0))
+        else:
+            i += 1  # Skip the '0' to read the character
+            node = Node(encoded_tree[i], 0)
+            if len(stack) >= 2:
+                right = stack.pop()
+                left = stack.pop()
+                node.left = left
+                node.right = right
+            stack.append(node)
+        i += 1
+    return stack[-1] if stack else None
+
+def decode_text(encoded_bytes, tree, padding):
+    decoded_text = ''
+    current = tree
+    for byte in encoded_bytes:
+        bits = bin(byte)[2:].rjust(8, '0')
+        for bit in bits:
+            if bit == '0':
+                current = current.left
+            else:
+                current = current.right
+            if current.char:
+                decoded_text += current.char
+                current = tree
+    return decoded_text[:-padding]  # Remove padding
+
+def main_encode():
+    filepath = "les_miserables.txt"  # Replace with your file path
     output_filename = "encoded_output.txt"
     frequencies = calculate_frequencies(filepath)
     huffman_tree = build_huffman_tree(frequencies)
@@ -88,5 +125,18 @@ def main():
         write_header(output_file, frequencies, encoded_tree, padding)
         output_file.write(encoded_bytes.decode('latin1'))  # Write bytes as text
 
+def main_decode():
+    input_filename = "encoded_output.txt"
+    output_filename = "decoded_output.txt"  # Decoded file path
+    with open(input_filename, 'r', encoding='utf-8') as input_file:
+        header_content = read_header(input_file)
+        tree = decode_huffman_tree(header_content['encoded_tree'])
+        encoded_text = input_file.read().encode('latin1')
+        decoded_text = decode_text(bytearray(encoded_text), tree, header_content['padding'])
+
+    with open(output_filename, 'w', encoding='utf-8') as output_file:
+        output_file.write(decoded_text)
+
 if __name__ == "__main__":
-    main()
+    main_encode()  # Encode the text
+    main_decode()  # Decode the text
